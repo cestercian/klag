@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class McpConfigTest {
@@ -61,5 +62,37 @@ class McpConfigTest {
   void allowedOriginsAreSplitAndTrimmed() {
     McpConfig c = from(Map.of("MCP_ALLOWED_ORIGINS", " https://ops.example.com , ,http://localhost:3000 "));
     assertEquals(List.of("https://ops.example.com", "http://localhost:3000"), c.allowedOrigins());
+  }
+
+  private static final List<String> PROPS = List.of(
+    "MCP_ENABLED", "mcp.enabled", "MCP_AUTH_TOKEN", "mcp.auth.token",
+    "MCP_PATH", "mcp.path", "MCP_ALLOWED_ORIGINS", "mcp.allowed.origins");
+
+  @AfterEach
+  void clearProperties() {
+    PROPS.forEach(System::clearProperty);
+  }
+
+  @Test
+  void fromEnvironmentReadsExactJvmProperties() {
+    System.setProperty("MCP_ENABLED", "true");
+    System.setProperty("MCP_AUTH_TOKEN", "secret");
+    System.setProperty("MCP_PATH", "agents");
+    McpConfig c = McpConfig.fromEnvironment();
+    assertTrue(c.enabled());
+    assertTrue(c.authEnabled());
+    assertEquals("secret", c.authToken());
+    assertEquals("/agents", c.path());
+  }
+
+  @Test
+  void fromEnvironmentReadsDottedJvmProperties() {
+    System.setProperty("mcp.enabled", "true");
+    System.setProperty("mcp.auth.token", "dotted-secret");
+    System.setProperty("mcp.allowed.origins", "https://ops.example.com");
+    McpConfig c = McpConfig.fromEnvironment();
+    assertTrue(c.enabled());
+    assertEquals("dotted-secret", c.authToken());
+    assertEquals(List.of("https://ops.example.com"), c.allowedOrigins());
   }
 }
