@@ -105,6 +105,18 @@ class McpToolsTest {
   }
 
   @Test
+  void nonStringGroupArgIsToolErrorNotException() {
+    McpTools tools = new McpTools(storeWith(group("payments", State.STABLE, 50, 1, 5)));
+    for (String tool : new String[] {"get_consumer_group_lag", "diagnose"}) {
+      for (Object bad : new Object[] {123, new io.vertx.core.json.JsonArray().add("payments"), new JsonObject(), "  "}) {
+        JsonObject r = tools.call(tool, new JsonObject().put("group", bad));
+        assertTrue(r.getBoolean("isError"), tool + " group=" + bad);
+        assertTrue(textOf(r).contains("Missing or invalid required argument: group"), tool + " group=" + bad);
+      }
+    }
+  }
+
+  @Test
   void getConsumerGroupLagUnknownGroupIsError() {
     McpTools tools = new McpTools(storeWith(group("payments", State.STABLE, 50, 1, 5)));
     JsonObject r = tools.call("get_consumer_group_lag", new JsonObject().put("group", "ghost"));

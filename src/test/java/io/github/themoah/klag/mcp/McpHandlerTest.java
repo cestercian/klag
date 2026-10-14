@@ -89,6 +89,18 @@ class McpHandlerTest {
   }
 
   @Test
+  void nonStringMethodIsInvalidRequest() {
+    for (Object bad : new Object[] {123, new JsonObject().put("a", 1), new io.vertx.core.json.JsonArray().add("ping"), true}) {
+      JsonObject req = new JsonObject().put("jsonrpc", "2.0").put("id", 7).put("method", bad);
+      JsonObject resp = openHandler().dispatch(req).orElseThrow();
+      JsonObject err = resp.getJsonObject("error");
+      assertEquals(McpProtocol.INVALID_REQUEST, err.getInteger("code"), "method=" + bad);
+      assertEquals(7, resp.getInteger("id"));
+      assertFalse(err.getString("message").contains("cannot be cast"), "leaked: " + err);
+    }
+  }
+
+  @Test
   void missingJsonrpcVersionIsInvalidRequest() {
     JsonObject req = new JsonObject().put("id", 7).put("method", McpProtocol.PING);
     JsonObject resp = openHandler().dispatch(req).orElseThrow();

@@ -175,9 +175,14 @@ public class McpHandler {
     }
 
     Object id = request.getValue("id");
-    String method = request.getString("method");
-    if (method == null) {
+    Object methodVal = request.getValue("method");
+    if (methodVal == null) {
       return Optional.of(McpProtocol.error(id, McpProtocol.INVALID_REQUEST, "Missing method"));
+    }
+    // Check the JSON type before use: a number, array or object is an invalid request, not an
+    // unknown method name built from its toString().
+    if (!(methodVal instanceof String method)) {
+      return Optional.of(McpProtocol.error(id, McpProtocol.INVALID_REQUEST, "'method' must be a string"));
     }
 
     return Optional.of(switch (method) {
