@@ -101,6 +101,19 @@ class McpHandlerTest {
   }
 
   @Test
+  void nonStringMethodWithoutIdIsInvalidRequestNotNotification() {
+    for (Object bad : new Object[] {123, new JsonObject().put("a", 1), new io.vertx.core.json.JsonArray().add("ping"), true}) {
+      JsonObject req = new JsonObject().put("jsonrpc", "2.0").put("method", bad);
+      Optional<JsonObject> maybe = openHandler().dispatch(req);
+      assertTrue(maybe.isPresent(), "method=" + bad + " must not be treated as a notification");
+      JsonObject resp = maybe.get();
+      JsonObject err = resp.getJsonObject("error");
+      assertEquals(McpProtocol.INVALID_REQUEST, err.getInteger("code"), "method=" + bad);
+      assertEquals("'method' must be a string", err.getString("message"), "method=" + bad);
+    }
+  }
+
+  @Test
   void missingJsonrpcVersionIsInvalidRequest() {
     JsonObject req = new JsonObject().put("id", 7).put("method", McpProtocol.PING);
     JsonObject resp = openHandler().dispatch(req).orElseThrow();

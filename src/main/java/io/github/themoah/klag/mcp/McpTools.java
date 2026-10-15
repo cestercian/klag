@@ -77,6 +77,11 @@ public class McpTools {
    * @return an MCP tool result ({@code content} + {@code isError})
    */
   public JsonObject call(String name, JsonObject args) {
+    // Group is required for these tools even when the snapshot is not ready, so a
+    // missing/invalid argument is not reported as a successful not-ready result.
+    if ((GET_GROUP_LAG.equals(name) || DIAGNOSE.equals(name)) && groupArg(args) == null) {
+      return error("Missing or invalid required argument: group");
+    }
     Optional<MetricsSnapshot> snapshot = store.latest();
     if (snapshot.isEmpty()) {
       return text("Snapshot not ready yet — the metrics collector has not completed its first "
