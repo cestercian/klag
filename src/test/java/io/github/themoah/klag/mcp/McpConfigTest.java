@@ -96,7 +96,7 @@ class McpConfigTest {
 
   @Test
   void fromEnvironmentReadsExactJvmProperties() {
-    assumeMcpEnvUnset();
+    assumeMcpEnvUnset("MCP_ENABLED", "MCP_AUTH_TOKEN", "MCP_PATH");
     System.setProperty("MCP_ENABLED", "true");
     System.setProperty("MCP_AUTH_TOKEN", "secret");
     System.setProperty("MCP_PATH", "agents");
@@ -109,7 +109,7 @@ class McpConfigTest {
 
   @Test
   void fromEnvironmentReadsDottedJvmProperties() {
-    assumeMcpEnvUnset();
+    assumeMcpEnvUnset("MCP_ENABLED", "MCP_AUTH_TOKEN", "MCP_ALLOWED_ORIGINS");
     System.setProperty("mcp.enabled", "true");
     System.setProperty("mcp.auth.token", "dotted-secret");
     System.setProperty("mcp.allowed.origins", "https://ops.example.com");
@@ -119,9 +119,19 @@ class McpConfigTest {
     assertEquals(List.of("https://ops.example.com"), c.allowedOrigins());
   }
 
-  private static void assumeMcpEnvUnset() {
-    MCP_ENV_NAMES.forEach(name -> Assumptions.assumeTrue(envUnset(name),
-      "process " + name + " would take precedence over JVM properties"));
+  @Test
+  void fromEnvironmentExactPropertyWinsOverDotted() {
+    assumeMcpEnvUnset("MCP_AUTH_TOKEN");
+    System.setProperty("MCP_AUTH_TOKEN", "exact-secret");
+    System.setProperty("mcp.auth.token", "dotted-secret");
+    assertEquals("exact-secret", McpConfig.fromEnvironment().authToken());
+  }
+
+  private static void assumeMcpEnvUnset(String... names) {
+    for (String name : names) {
+      Assumptions.assumeTrue(envUnset(name),
+        "process " + name + " would take precedence over JVM properties");
+    }
   }
 
   private static boolean envUnset(String name) {
