@@ -211,8 +211,11 @@ public class McpHandler {
     if (argsVal != null && !(argsVal instanceof JsonObject)) {
       return McpProtocol.error(id, McpProtocol.INVALID_PARAMS, "'arguments' must be an object");
     }
+    if (!(params.getValue("name") instanceof String toolName)) {
+      return McpProtocol.error(id, McpProtocol.INVALID_PARAMS, "'name' must be a string");
+    }
     JsonObject args = argsVal != null ? (JsonObject) argsVal : new JsonObject();
-    JsonObject result = tools.call(String.valueOf(params.getValue("name")), args);
+    JsonObject result = tools.call(toolName, args);
     return McpProtocol.success(id, result);
   }
 

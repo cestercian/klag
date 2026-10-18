@@ -117,6 +117,22 @@ class McpToolsTest {
   }
 
   @Test
+  void validGroupReturnsNotReadyForGetConsumerGroupLagWhenSnapshotEmpty() {
+    McpTools tools = new McpTools(new SnapshotStore());
+    JsonObject r = tools.call("get_consumer_group_lag", new JsonObject().put("group", "payments"));
+    assertFalse(r.getBoolean("isError"));
+    assertTrue(textOf(r).toLowerCase(Locale.ROOT).contains("not ready"));
+  }
+
+  @Test
+  void validGroupReturnsNotReadyForDiagnoseWhenSnapshotEmpty() {
+    McpTools tools = new McpTools(new SnapshotStore());
+    JsonObject r = tools.call("diagnose", new JsonObject().put("group", "payments"));
+    assertFalse(r.getBoolean("isError"));
+    assertTrue(textOf(r).toLowerCase(Locale.ROOT).contains("not ready"));
+  }
+
+  @Test
   void invalidGroupIsErrorEvenWhenSnapshotNotReady() {
     McpTools tools = new McpTools(new SnapshotStore());
     for (String tool : new String[] {"get_consumer_group_lag", "diagnose"}) {
